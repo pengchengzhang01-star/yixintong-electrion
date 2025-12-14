@@ -1,0 +1,44 @@
+diff --git a/node_modules/rc-image/es/Operations.js b/node_modules/rc-image/es/Operations.js
+index cd929c6..49b4327 100644
+--- a/node_modules/rc-image/es/Operations.js
++++ b/node_modules/rc-image/es/Operations.js
+@@ -49,14 +49,15 @@ var Operations = function Operations(props) {
+   React.useEffect(function () {
+     var onKeyDown = function onKeyDown(e) {
+       if (e.keyCode === KeyCode.ESC) {
++        e.stopImmediatePropagation()
+         onClose();
+       }
+     };
+     if (visible) {
+-      window.addEventListener('keydown', onKeyDown);
++      window.addEventListener('keydown', onKeyDown, true);
+     }
+     return function () {
+-      window.removeEventListener('keydown', onKeyDown);
++      window.removeEventListener('keydown', onKeyDown, true);
+     };
+   }, [visible]);
+   var tools = [{
+diff --git a/node_modules/rc-image/lib/Operations.js b/node_modules/rc-image/lib/Operations.js
+index 4d8c2ba..6335fe1 100644
+--- a/node_modules/rc-image/lib/Operations.js
++++ b/node_modules/rc-image/lib/Operations.js
+@@ -59,14 +59,15 @@ var Operations = function Operations(props) {
+   React.useEffect(function () {
+     var onKeyDown = function onKeyDown(e) {
+       if (e.keyCode === _KeyCode.default.ESC) {
++        e.stopImmediatePropagation()
+         onClose();
+       }
+     };
+     if (visible) {
+-      window.addEventListener('keydown', onKeyDown);
++      window.addEventListener('keydown', onKeyDown, true);
+     }
+     return function () {
+-      window.removeEventListener('keydown', onKeyDown);
++      window.removeEventListener('keydown', onKeyDown, true);
+     };
+   }, [visible]);
+   var tools = [{

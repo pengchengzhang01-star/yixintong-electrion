@@ -1,0 +1,20 @@
+.send-action-bar-tooltip {
+  :global {
+    .ant-tooltip-content {
+      // color: #e2e2e2;
+
+      .ant-tooltip-inner {
+        min-width: 0;
+        min-height: 0;
+        padding: 2px 4px;
+        border-radius: 4px;
+        box-shadow: none;
+
+        background-color: #e5e5e5;
+        color: #000;
+
+        font-size: 12px;
+      }
+    }
+  }
+}

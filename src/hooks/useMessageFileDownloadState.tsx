@@ -1,0 +1,168 @@
+import { MessageType } from "@openim/wasm-client-sdk";
+import { useLatest, useMount } from "ahooks";
+import { useCallback, useEffect, useState } from "react";
+
+import { IMSDK } from "@/layout/MainContentWrap";
+import { SystemNotificationElem } from "@/pages/chat/queryChat/SystemNotification";
+import { ExMessageItem, useMessageStore } from "@/store";
+import { SaveType } from "@/store/type";
+import { downloadFile, getDownloadTask } from "@/utils/common";
+import { getConversationIDByMsg } from "@/utils/imCommon";
+
+export const getSourceData = (message: ExMessageItem) => {
+  if (message.contentType === MessageType.PictureMessage) {
+    return {
+      url: message.pictureElem!.sourcePicture.url,
+      path: message.pictureElem!.sourcePath,
+      saveType: "image",
+    };
+  }
+  if (message.contentType === MessageType.VideoMessage) {
+    return {
+      url: message.videoElem!.videoUrl,
+      path: message.videoElem!.videoPath,
+      saveType: "video",
+    };
+  }
+  if (message.contentType === MessageType.VoiceMessage) {
+    return {
+      url: message.soundElem!.sourceUrl,
+      path: message.soundElem!.soundPath,
+      saveType: "voice",
+    };
+  }
+  if (message.contentType === MessageType.OANotification) {
+    const notificationEl: SystemNotificationElem = JSON.parse(
+      message.notificationElem!.detail,
+    );
+    return {
+      url: notificationEl.videoElem?.videoUrl ?? "",
+      path: notificationEl.videoElem?.videoPath ?? "",
+      saveType: "video",
+    };
+  }
+  return {
+    url: message.fileElem!.sourceUrl,
+    path: message.fileElem!.filePath,
+    saveType: "file",
+  };
+};
+
+const mediaTypes = [MessageType.VideoMessage, MessageType.PictureMessage];
+
+export function useMessageFileDownloadState(
+  message: ExMessageItem,
+  customCallback?: (path: string) => void,
+) {
+  const [previewPath, setPreviewPath] = useState<string>();
+  const latestPreviewPath = useLatest(previewPath);
+
+  const updateDownloadTask = useMessageStore((state) => state.updateDownloadTask);
+  const currentTask = useMessageStore((state) =>
+    getDownloadTask({
+      downloadMap: state.downloadMap,
+      compareKey: "clientMsgID",
+      compareValue: message.clientMsgID,
+    }),
+  );
+  const latestCurrentTask = useLatest(currentTask);
+  const latestMessage = useLatest(message);
+
+  useMount(() => {
+    checkIsDownload();
+  });
+
+  useEffect(() => {
+    if (currentTask?.downloadState === "finish") {
+      checkIsDownload();
+    }
+  }, [currentTask?.downloadState]);
+
+  const checkIsDownload = async () => {
+    const conversationID = getConversationIDByMsg(latestMessage.current);
+    const { data } = await IMSDK.findMessageList([
+      {
+        conversationID,
+        clientMsgIDList: [latestMessage.current.clientMsgID],
+      },
+    ]);
+    const message = data.findResultItems?.[0]?.messageList?.[0];
+    if (!message) return;
+
+    const { path } = getSourceData(message);
+    if (window.electronAPI?.fileExists(path)) {
+      setPreviewPath(path);
+      return;
+    }
+    if (message.localEx && window.electronAPI?.fileExists(message.localEx)) {
+      setPreviewPath(message.localEx);
+    }
+  };
+
+  const executeDownload = () => {
+    const { url, saveType } = getSourceData(latestMessage.current);
+    const conversationID = getConversationIDByMsg(latestMessage.current);
+    if (message.contentType === MessageType.VoiceMessage && !window.electronAPI) {
+      if (!conversationID) return;
+      IMSDK.setMessageLocalEx({
+        conversationID,
+        clientMsgID: message.clientMsgID,
+        localEx: "1",
+      });
+      return;
+    }
+    downloadFile(url, {
+      saveType: saveType as SaveType,
+      showError: true,
+      clientMsgID: latestMessage.current.clientMsgID,
+      isMediaMessage: mediaTypes.includes(message.contentType),
+      conversationID,
+    });
+  };
+
+  const tryDownload = useCallback(() => {
+    if (latestPreviewPath.current) {
+      const confirmCheckIsDownload = window.electronAPI?.fileExists(
+        latestPreviewPath.current,
+      );
+      if (!confirmCheckIsDownload) {
+        setPreviewPath(undefined);
+        executeDownload();
+        return;
+      }
+      const callback = customCallback ?? window.electronAPI?.openFile;
+      callback?.(latestPreviewPath.current);
+      return;
+    }
+
+    if (
+      latestCurrentTask.current?.downloadState === "downloading" ||
+      latestCurrentTask.current?.downloadState === "resume"
+    ) {
+      window.electronAPI?.pauseDownload(latestCurrentTask.current.downloadUrl!);
+      updateDownloadTask(latestCurrentTask.current.downloadUrl!, {
+        downloadState: "pause",
+      });
+      return;
+    }
+
+    if (latestCurrentTask.current?.downloadState === "pause") {
+      window.electronAPI?.resumeDownload(latestCurrentTask.current.downloadUrl!);
+      updateDownloadTask(latestCurrentTask.current.downloadUrl!, {
+        downloadState: "downloading",
+      });
+      return;
+    }
+
+    if (!latestCurrentTask.current) {
+      executeDownload();
+    }
+  }, []);
+
+  return {
+    progress: currentTask?.progress ?? 0,
+    downloadState: previewPath ? "finish" : currentTask?.downloadState ?? "cancel",
+    tryDownload,
+    checkIsDownload,
+  };
+}

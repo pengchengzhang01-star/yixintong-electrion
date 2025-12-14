@@ -1,0 +1,32 @@
+.single-search-window {
+  display: flex;
+  flex-direction: column;
+  height: 670px;
+  .ant-tabs {
+    flex: 1;
+    overflow: hidden;
+    padding-bottom: 24px;
+    .ant-tabs-nav {
+      margin-bottom: 0;
+    }
+    .ant-tabs-nav-wrap {
+      padding: 0 24px;
+    }
+    .ant-tabs-content,
+    .ant-tabs-tabpane {
+      height: 100%;
+    }
+  }
+  .ant-spin-container {
+    & > div > div > div {
+      &[data-viewport-type="element"] {
+        padding-top: 12px;
+      }
+    }
+    & > div > div {
+      &[data-viewport-type="element"] {
+        padding-top: 12px;
+      }
+    }
+  }
+}

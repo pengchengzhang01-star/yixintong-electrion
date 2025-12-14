@@ -1,0 +1,118 @@
+/**
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+  appId: "io.opencorp.desktop.er",
+  productName: "YIXINTONG",
+  asar: false,
+  asarUnpack: ["**/*.node"],
+  extends: null,
+  directories: {
+    output: "release/prod/${version}",
+  },
+  files: [
+    "dist",
+    "!dist/*.wasm",
+    "dist-electron",
+    "!node_modules/rxjs/**/*",
+    "!node_modules/koffi/src/**/*",
+    "!node_modules/koffi/build/**/*",
+    "!node_modules/koffi/vendor/**/*",
+    "!node_modules/@openim/wasm-client-sdk/assets/**/*",
+    "!node_modules/@openim/electron-client-sdk/assets/**/*",
+  ],
+  extraResources: [
+    {
+      from: "extraResources",
+      to: "extraResources",
+    },
+    {
+      from: "node_modules/rxjs",
+      to: "app.asar.unpacked/node_modules/rxjs",
+    },
+  ],
+  mac: {
+    artifactName: "${productName}_${version}_${arch}.${ext}",
+    target: ["dmg"],
+    icon: "./dist/icons/mac_icon.png",
+    entitlements: "./entitlements.mac.plist",
+    "extendInfo": {
+        "NSMicrophoneUsageDescription": "授权访问麦克风",
+        "NSCameraUsageDescription": "授权访问摄像头"
+    },
+    extraResources: [
+      {
+        from: "node_modules/@openim/electron-client-sdk/assets/mac_${arch}/",
+        to: "app.asar.unpacked/node_modules/@openim/electron-client-sdk/assets/mac_${arch}",
+      },
+      {
+        from: "node_modules/koffi/build/koffi/darwin_${arch}/",
+        to: "koffi/darwin_${arch}",
+      },
+    ],
+  },
+  win: {
+    target: [
+      {
+        target: "nsis",
+      },
+    ],
+    artifactName: "${productName}_${version}.${ext}",
+    icon: "./dist/icons/icon.ico",
+    extraResources: [
+      {
+        from: "node_modules/@openim/electron-client-sdk/assets/win_${arch}/",
+        to: "app.asar.unpacked/node_modules/@openim/electron-client-sdk/assets/win_${arch}",
+      },
+      {
+        from: "node_modules/koffi/build/koffi/win32_${arch}/",
+        to: "koffi/win32_${arch}",
+      },
+    ],
+  },
+  linux: {
+    icon: "./dist/icons/icon.png",
+    target: "deb",
+    maintainer: "opencorp-er",
+    artifactName: "${productName}_${version}_${arch}.${ext}",
+    category: "Network",
+    executableName: "opencorp-er",
+    desktop: {
+      Comment: "OpenIM PC Client.",
+      Categories: "Network;InstantMessaging;Chat;",
+      StartupWMClass: "OpenCorp-ER",
+      MimeType: "x-scheme-handler/openim;",
+    },
+    extraResources: [
+      {
+        from: "node_modules/@openim/electron-client-sdk/assets/linux_${arch}/",
+        to: "app.asar.unpacked/node_modules/@openim/electron-client-sdk/assets/linux_${arch}",
+      },
+      {
+        from: "node_modules/koffi/build/koffi/linux_${arch}/",
+        to: "koffi/linux_${arch}",
+      },
+      {
+        from: "dist/icons",
+        to: "icons",
+      },
+    ],
+  },
+  nsis: {
+    oneClick: false,
+    perMachine: true,
+    allowElevation: true,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    deleteAppDataOnUninstall: true,
+    shortcutName: "OpenCorp-ER",
+    guid: "a8f5e9c4-3b2d-4e1f-9c8a-7d6b5e4a3c2b", // 正式环境唯一 GUID
+    // 修改默认安装路径
+    include: "./build-scripts/windows/installer-prod.nsh",
+  },
+  deb: {
+    afterInstall: "./build-scripts/linux/after-install.sh",
+    afterRemove: "./build-scripts/linux/after-remove.sh",
+  },
+}

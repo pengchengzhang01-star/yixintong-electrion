@@ -1,0 +1,35 @@
+.message-drawer-tab {
+  :global {
+    .ant-tabs-nav {
+      padding: 0 24px;
+      margin-top: 12px;
+
+      .ant-tabs-tab {
+        padding: 4px 0;
+      }
+
+      .ant-tabs-ink-bar {
+        height: 3px;
+        border-radius: 8px;
+        transform: scaleX(0.6);
+      }
+
+      &::before {
+        border: none;
+      }
+    }
+
+    .ant-tabs-content-holder {
+      flex: 1;
+
+      .ant-tabs-content {
+        height: 100%;
+        overflow-y: auto;
+
+        .ant-tabs-tabpane {
+          height: 100%;
+        }
+      }
+    }
+  }
+}
