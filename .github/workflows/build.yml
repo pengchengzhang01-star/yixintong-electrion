@@ -19,19 +19,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
+      - name: Check package.json
+        run: |
+          Get-Content package.json | Select-String "electron:build"
+          
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build Windows
         run: npm run electron:build:win:prod
+
+      - name: List build output
+        run: Get-ChildItem -Recurse release/prod/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: release/prod/*/YIXINTONG_*.exe
+          path: release/prod/**/*.exe
 
   build-macos:
     runs-on: macos-latest
@@ -43,23 +49,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build macOS ARM64
         run: npm run electron:build:mac-arm:prod
         env:
-          # 如果需要签名，添加证书配置
-          # CSC_LINK: ${{ secrets.MAC_CERTS }}
-          # CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: List build output
+        run: ls -R release/prod/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-installer
-          path: release/prod/*/*.dmg
+          path: release/prod/**/*.dmg
 
   build-linux:
     runs-on: ubuntu-latest
@@ -71,19 +77,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build Linux
         run: npm run electron:build:linux-x64:prod
+
+      - name: List build output
+        run: ls -R release/prod/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-installer
-          path: release/prod/*/*.deb
+          path: release/prod/**/*.deb
 
   release:
     needs: [build-windows, build-macos, build-linux]
